@@ -1,4 +1,3 @@
-import { useAuth, useUser } from "@clerk/clerk-react";
 import axios from "axios";
 import {
     Activity,
@@ -22,6 +21,8 @@ import React, { useEffect, useState } from "react";
 import Calendar from "../../../components/Dashboard/Calendar";
 import Loader from "../../../components/main/Loader";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../../../context/UserContext";
+import { auth } from "../../../config/config";
 
 const PatientDashboardContent = () => {
     const [userData, setUserData] = useState(null);
@@ -33,14 +34,13 @@ const PatientDashboardContent = () => {
     const [savingMap, setSavingMap] = useState({});
 
     const { user } = useUser();
-    const { getToken } = useAuth();
     const [locationSaved, setLocationSaved] = useState(false);
 
     const navigate = useNavigate();
 
     useEffect(() => {
         fetchUserData();
-    }, [user, getToken]);
+    }, [user]);
 
     // Save location once when component renders (only if not already saved)
     useEffect(() => {
@@ -73,10 +73,10 @@ const PatientDashboardContent = () => {
                 console.log("Location obtained:", latitude, longitude);
 
                 // Save to backend
-                const token = await getToken();
+                const token = await user.getIdToken();
                 await axios.put(
                     `${import.meta.env.VITE_SERVER_URL}/api/patient/${
-                        user.id
+                        user.uid
                     }/location`,
                     { latitude, longitude },
                     {
@@ -112,16 +112,18 @@ const PatientDashboardContent = () => {
         if (userData && !locationSaved) {
             saveLocation();
         }
-    }, [user, userData, locationSaved, getToken]);
+    }, [user, userData, locationSaved]);
 
     const fetchUserData = async () => {
         if (!user) return;
         try {
             setLoading(true);
-            const token = await getToken();
+            const token = await auth.currentUser.getIdToken();
+            console.log(auth.currentUser);
+            console.log(token);
             const response = await axios.get(
                 `${import.meta.env.VITE_SERVER_URL}/api/patient/get-patient/${
-                    user.id
+                    user.uid
                 }`,
                 {
                     headers: {
@@ -129,6 +131,7 @@ const PatientDashboardContent = () => {
                     },
                 }
             );
+            // console.log(response);
             setUserData(response.data);
         } catch (error) {
             console.error(
@@ -174,12 +177,12 @@ const PatientDashboardContent = () => {
     const openMedicationModal = async () => {
         setMedOpen(true);
         try {
-            const token = await getToken();
+            const token = await user.getIdToken();
 
             // Fetch appointments (to collect prescriptions)
             const apptRes = await axios.get(
                 `${import.meta.env.VITE_SERVER_URL}/api/appointment/patient/${
-                    user.id
+                    user.uid
                 }`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -215,7 +218,7 @@ const PatientDashboardContent = () => {
             // Fetch already saved reminders
             const rRes = await axios.get(
                 `${import.meta.env.VITE_SERVER_URL}/api/patient/${
-                    user.id
+                    user.uid
                 }/reminders`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -241,7 +244,7 @@ const PatientDashboardContent = () => {
                         <div className="flex md:flex-row flex-col items-center space-x-6 mb-6 lg:mb-0">
                             <div className="relative">
                                 <img
-                                    src={user.imageUrl}
+                                    src={user.photoURL}
                                     alt="Profile"
                                     className="md:w-30 md:h-30 h-20 w-20 rounded-full object-cover border-4 border-white/30 shadow-lg"
                                 />
@@ -729,7 +732,7 @@ const PatientDashboardContent = () => {
                                     Patient ID:
                                 </p>
                                 <p className="text-sm font-semibold text-light-primary-text dark:text-dark-primary-text truncate">
-                                    {userData._id}
+                                    {userData.patientId}
                                 </p>
                             </div>
                             <div className="p-3 rounded-xl bg-light-background dark:bg-dark-background">
@@ -737,7 +740,7 @@ const PatientDashboardContent = () => {
                                     User ID:
                                 </p>
                                 <p className="text-sm font-semibold text-light-primary-text dark:text-dark-primary-text truncate">
-                                    {user.id}
+                                    {user.uid}
                                 </p>
                             </div>
                             <div className="p-3 rounded-xl bg-light-background dark:bg-dark-background">

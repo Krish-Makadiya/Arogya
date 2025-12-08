@@ -1,7 +1,8 @@
 // client/src/pages/patientPages/GetAppointment/GetAppointmentContent.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useAuth, useUser } from "@clerk/clerk-react";
+// import { useAuth, useUser } from "@clerk/clerk-react";
+import { useUser } from '../../../context/UserContext';
 import {
     Stethoscope,
     Star,
@@ -20,6 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Loader from "../../../components/main/Loader";
+import { auth } from "../../../config/config";
 
 const COMMON_SYMPTOMS = [
     "Fever",
@@ -106,7 +108,6 @@ const GetAppointmentContent = () => {
     const [doctors, setDoctors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { getToken } = useAuth();
     const { user } = useUser();
     const [selectedDoctor, setSelectedDoctor] = useState(null);
     const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -121,7 +122,7 @@ const GetAppointmentContent = () => {
     });
     const [availableSlots, setAvailableSlots] = useState([]);
     const [loadingSlots, setLoadingSlots] = useState(false);
-    const [userMetadata, setUserMetadata] = useState(user.unsafeMetadata || {});
+    const [userMetadata, setUserMetadata] = useState(user.metadata || {});
     const [isBooking, setIsBooking] = useState(false);
 
     useEffect(() => {
@@ -131,7 +132,7 @@ const GetAppointmentContent = () => {
         (async () => {
             try {
                 setLoading(true);
-                const token = await getToken();
+                const token = await auth.currentUser.getIdToken();
                 const res = await axios.get(
                     `${
                         import.meta.env.VITE_SERVER_URL
@@ -155,7 +156,7 @@ const GetAppointmentContent = () => {
         };
 
         // No pre-click revalidation; rely on 5s refresh and conflict removal on booking
-    }, [user, getToken]);
+    }, [user]);
 
     const validateAppointmentDate = (date, time) => {
         if (!date || !time)
@@ -238,7 +239,7 @@ const GetAppointmentContent = () => {
                     formData.append("aiSummary", aiSummary);
                     formData.append("reportFile", appointmentForm.reportFile);
 
-                    const token = await getToken();
+                    const token = await auth.currentUser.getIdToken();
                     const res = await axios.post(
                         `${
                             import.meta.env.VITE_SERVER_URL
@@ -270,7 +271,7 @@ const GetAppointmentContent = () => {
                                 ...prev,
                                 time: "",
                             }));
-                            const token2 = await getToken();
+                            const token2 = await auth.currentUser.getIdToken();
                             const res2 = await axios.get(
                                 `${
                                     import.meta.env.VITE_SERVER_URL
@@ -338,7 +339,7 @@ const GetAppointmentContent = () => {
         if (field === "date" && selectedDoctor) {
             try {
                 setLoadingSlots(true);
-                const token = await getToken();
+                const token = await auth.currentUser.getIdToken();
                 const res = await axios.get(
                     `${import.meta.env.VITE_SERVER_URL}/api/doctor/${
                         selectedDoctor._id
@@ -370,7 +371,7 @@ const GetAppointmentContent = () => {
         let cancelled = false;
         const tick = async () => {
             try {
-                const token = await getToken();
+                const token = await auth.currentUser.getIdToken();
                 const res = await axios.get(
                     `${import.meta.env.VITE_SERVER_URL}/api/doctor/${
                         selectedDoctor._id
@@ -392,7 +393,7 @@ const GetAppointmentContent = () => {
             cancelled = true;
             clearInterval(id);
         };
-    }, [bookingModalOpen, selectedDoctor, appointmentForm.date, getToken]);
+    }, [bookingModalOpen, selectedDoctor, appointmentForm.date]);
 
     const handleAddSymptom = () => {
         const value = appointmentForm.symptomInput.trim();
