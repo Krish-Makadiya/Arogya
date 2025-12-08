@@ -35,6 +35,7 @@ const allowedOrigins = [
     process.env.CLIENT_URL,
     "https://arogya-raksha.vercel.app",
     "http://localhost:5173",
+    "http://localhost:5174",
 ].filter(Boolean);
 
 const corsOptions = {

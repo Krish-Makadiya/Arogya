@@ -81,4 +81,37 @@ const completion = await groq.chat.completions.create({
   }
 });
 
+// Generate blog content from title and key points using Groq
+router.post("/blog-generate", async (req, res) => {
+  try {
+    const { title, keyPoints } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: "Title is required" });
+    }
+
+    const pointsText = Array.isArray(keyPoints)
+      ? keyPoints.filter(Boolean).map((p) => `- ${p}`).join("\n")
+      : (keyPoints || "");
+
+    const prompt = `You are a medical writer. Write a well-structured blog post for a community health portal.\nTitle: ${title}\nKey points (bulleted):\n${pointsText}\n\nRequirements:\n- Clear introduction, informative body with subheadings, and a concise conclusion.\n- Tone: helpful, accessible, evidence-informed.\n- Add practical tips and, where useful, short bullet lists.\n- Do not fabricate statistics; avoid definitive medical claims without context.\n- Keep formatting as plain text with line breaks and markdown-style headings (##, ###).`;
+
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.5,
+    });
+
+    const content = completion.choices?.[0]?.message?.content?.trim();
+    if (!content) {
+      return res.status(500).json({ error: "AI did not return content" });
+    }
+
+    return res.json({ content });
+  } catch (error) {
+    console.error("Groq Blog Generate Error:", error);
+    return res.status(500).json({ error: "Groq AI failed" });
+  }
+});
+
 module.exports = router;
