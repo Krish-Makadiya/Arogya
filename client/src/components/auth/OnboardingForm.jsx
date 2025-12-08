@@ -1,19 +1,40 @@
-import { useAuth, useUser } from "@clerk/clerk-react";
 import { Shield, Stethoscope, User, UserCircle, Building2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { useUser } from "../../context/UserContext";
+import { auth } from "../../config/config";
 
 const ROLES = ["Patient", "Doctor", "Pharmacy", "Admin"];
+const SPECIALTIES = [
+    { label: "General Medicine", value: "general" },
+    { label: "Cardiology", value: "cardiology" },
+    { label: "Dermatology", value: "dermatology" },
+    { label: "ENT", value: "ent" },
+    { label: "Gastroenterology", value: "gastroenterology" },
+    { label: "Neurology", value: "neurology" },
+    { label: "Nephrology", value: "nephrology" },
+    { label: "Oncology", value: "oncology" },
+    { label: "Orthopedics", value: "orthopedics" },
+    { label: "Pediatrics", value: "pediatrics" },
+    { label: "Psychiatry", value: "psychiatry" },
+    { label: "Pulmonology", value: "pulmonology" },
+    { label: "Radiology", value: "radiology" },
+    { label: "Gynecology", value: "gynecology" },
+    { label: "Endocrinology", value: "endocrinology" },
+    { label: "Urology", value: "urology" },
+    { label: "Ophthalmology", value: "ophthalmology" },
+    { label: "Dentistry", value: "dentistry" },
+];
 
 export default function OnboardingForm() {
     const { user, isLoaded } = useUser();
     const navigate = useNavigate();
     const [role, setRole] = useState("");
     const [saving, setSaving] = useState(false);
-    const { getToken } = useAuth();
-
+    // const { getToken } = useAuth();
+    console.log(user);
     const [patient, setPatient] = useState({
         fullName: "",
         dob: "",
@@ -25,7 +46,7 @@ export default function OnboardingForm() {
         governmentIdProof: null,
         emergencyContactName: "",
         emergencyContactPhone: "",
-        clerkUserId: user.id,
+        clerkUserId: user.uid,
         telemedicineConsent: true,
     });
 
@@ -57,7 +78,7 @@ export default function OnboardingForm() {
         registrationType: "",
         gstNumber: "",
         description: "",
-        clerkUserId: user.id,
+        clerkUserId: user.uid,
     });
 
     const [admin, setAdmin] = useState({
@@ -91,13 +112,15 @@ export default function OnboardingForm() {
 
     // Check if user has already completed onboarding
     useEffect(() => {
-        if (isLoaded && user && user.unsafeMetadata?.onboardingCompleted) {
-            const userRole = user.unsafeMetadata.role;
+        if (isLoaded && user && user.metadata?.onboardingCompleted) {
+            const userRole = user.metadata.role;
             if (userRole) {
                 navigate(`/dashboard/${userRole.toLowerCase()}`);
             }
         }
     }, [isLoaded, user, navigate]);
+
+    console.log(user);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -112,7 +135,7 @@ export default function OnboardingForm() {
                 doctor,
                 pharmacy,
                 admin,
-                clerkUserId: user?.id,
+                clerkUserId: user?.uid,
             });
             let backendUrl = "";
             let backendBody = {};
@@ -139,7 +162,8 @@ export default function OnboardingForm() {
                 backendBody = admin;
             }
 
-            const token = await getToken();
+            const token = await auth?.currentUser?.getIdToken();
+            console.log(token);
 
             if (backendUrl) {
                 console.log("Submitting to backend:", backendUrl, backendBody);
@@ -179,13 +203,19 @@ export default function OnboardingForm() {
                         "telemedicineConsent",
                         backendBody.telemedicineConsent === true ? true : false
                     );
+                    formData.append(
+                        "clerkUserId",
+                        (backendBody.clerkUserId = user.uid)
+                    );
                     try {
+                        console.log("===");
                         response = await axios.post(backendUrl, formData, {
                             headers: {
                                 "Content-Type": "multipart/form-data",
                                 Authorization: `Bearer ${token}`,
                             },
                         });
+                        console.log("===");
                         toast.success(
                             "Doctor information submitted successfully"
                         );
@@ -222,7 +252,7 @@ export default function OnboardingForm() {
                         "telemedicineConsent",
                         backendBody.telemedicineConsent || true
                     );
-                    formData.append("clerkUserId", user?.id || "");
+                    formData.append("clerkUserId", user?.uid || "");
 
                     try {
                         response = await axios.post(backendUrl, formData, {
@@ -247,6 +277,7 @@ export default function OnboardingForm() {
                                 Authorization: `Bearer ${token}`,
                             },
                         });
+                        console.log(response);
                         toast.success("Information submitted successfully");
                     } catch (error) {
                         toast.error("Error submitting form");
@@ -257,21 +288,26 @@ export default function OnboardingForm() {
                 console.log("Backend response:", response.data);
                 console.log("Backend response Detailed:", response);
             }
+            console.log("===========");
 
             // Update Clerk metadata as before
+            console.log("===========", user);
             if (user) {
-                await user.update({
-                    unsafeMetadata: {
-                        role: role,
-                        onboardingCompleted: true,
-                        ...(role === "Patient" && { patientData: patient }),
-                        ...(role === "Doctor" && { doctorData: doctor }),
-                        ...(role === "Pharmacy" && { pharmacyData: pharmacy }),
-                        ...(role === "Admin" && { adminData: admin }),
-                    },
-                });
-                console.log("User metadata updated successfully");
+                (user.metadata = {
+                    role: role,
+                    onboardingCompleted: true,
+                    ...(role === "Patient" && { patientData: patient }),
+                    ...(role === "Doctor" && { doctorData: doctor }),
+                    ...(role === "Pharmacy" && { pharmacyData: pharmacy }),
+                    ...(role === "Admin" && { adminData: admin }),
+                }),
+                    console.log("User metadata updated successfully");
             }
+
+            localStorage.setItem(
+                `arogya-profile-${user.uid}`,
+                JSON.stringify(user.metadata)
+            );
 
             navigate(`/${role.toLowerCase()}/dashboard`);
         } catch (error) {
@@ -803,10 +839,9 @@ export default function OnboardingForm() {
                                     Medical Specialty
                                 </label>
                                 <div className="mt-2">
-                                    <input
+                                    <select
                                         id="doctor-specialty"
                                         name="doctor-specialty"
-                                        type="text"
                                         value={doctor.specialty}
                                         onChange={(e) =>
                                             setDoctor({
@@ -814,10 +849,13 @@ export default function OnboardingForm() {
                                                 specialty: e.target.value,
                                             })
                                         }
-                                        className="block w-full rounded-md bg-light-surface/50 dark:bg-dark-surface/50 px-3 py-1.5 text-base text-light-primary-text dark:text-dark-primary-text outline-1 -outline-offset-1 outline-light-secondary-text/20 dark:outline-dark-secondary-text/20 placeholder:text-light-secondary-text dark:placeholder:text-dark-secondary-text focus:outline-2 focus:-outline-offset-2 focus:outline-light-primary dark:focus:outline-dark-primary sm:text-sm/6"
-                                        placeholder="e.g., Cardiology, Neurology, etc."
-                                        required
-                                    />
+                                        className="block w-full rounded-md bg-light-surface/50 dark:bg-dark-surface/50 px-3 py-1.5 text-base text-light-primary-text dark:text-dark-primary-text outline-1 -outline-offset-1 outline-light-secondary-text/20 dark:outline-dark-secondary-text/20 focus:outline-2 focus:-outline-offset-2 focus:outline-light-primary dark:focus:outline-dark-primary sm:text-sm/6"
+                                        required>
+                                        <option value="">Select Specialty</option>
+                                        {SPECIALTIES.map((s) => (
+                                            <option key={s.value} value={s.value}>{s.label}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
 
