@@ -2,6 +2,8 @@ const Article = require("../schema/articles.schema");
 const Doctor = require("../schema/doctor.schema");
 const mongoose = require("mongoose");
 const { getAuth } = require("@clerk/express");
+const Groq = require("groq-sdk");
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // ----------------------------------------------------------------------
 // Create Article
@@ -13,31 +15,76 @@ exports.createArticle = async (req, res) => {
       type,
       title,
       content,
+      keyPoints = [],
+      prompt: genPrompt,
       tags = [],
       images = []
     } = req.body;
 
-    if (!authorClerkId || !title || !content || !type) {
+    if (!title || !type) {
       return res.status(400).json({
         success: false,
-        message: "Missing required fields: authorClerkId, type, title, content"
+        message: "Missing required fields: type, title"
       });
     }
 
-    const doctor = await Doctor.findOne({ clerkUserId: authorClerkId });
-    if (!doctor) {
-      return res.status(404).json({
+    let authorId = undefined;
+    if (authorClerkId) {
+      const doctor = await Doctor.findOne({ clerkUserId: authorClerkId });
+      if (doctor) {
+        authorId = doctor._id;
+      }
+      // If no doctor found, we proceed without authorId to allow Admin-authored posts
+    }
+
+    // If it's a standard Article and content is empty, auto-generate using Groq
+    let finalContent = content;
+    if (type === "Article" && (!finalContent || !String(finalContent).trim())) {
+      try {
+        const pointsText = Array.isArray(keyPoints)
+          ? keyPoints.filter(Boolean).map((p) => `- ${p}`).join("\n")
+          : (keyPoints || "");
+
+        const aiUserPrompt = genPrompt && String(genPrompt).trim().length > 0
+          ? `\nAdditional guidance:\n${String(genPrompt).trim()}`
+          : "";
+
+        const aiPrompt = `You are a medical writer. Write a well-structured blog post for a community health portal.\nTitle: ${title}\nKey points (bulleted):\n${pointsText}\n${aiUserPrompt}\n\nRequirements:\n- Clear introduction, informative body with subheadings, and a concise conclusion.\n- Tone: helpful, accessible, evidence-informed.\n- Add practical tips and, where useful, short bullet lists.\n- Do not fabricate statistics; avoid definitive medical claims without context.\n- Keep formatting as plain text with line breaks and markdown-style headings (##, ###).`;
+
+        const completion = await groq.chat.completions.create({
+          model: "llama-3.1-8b-instant",
+          messages: [{ role: "user", content: aiPrompt }],
+          temperature: 0.5,
+        });
+        finalContent = completion.choices?.[0]?.message?.content?.trim() || "";
+      } catch (aiErr) {
+        console.error("Groq generation failed, falling back:", aiErr?.message || aiErr);
+        // leave finalContent as empty string; validation below will handle
+      }
+    }
+
+    // For non-Article types, ensure content is present
+    if ((type === "Announcement" || type === "Alert") && (!finalContent || !String(finalContent).trim())) {
+      return res.status(400).json({
         success: false,
-        message: "Doctor not found"
+        message: "Content is required for Announcement and Alert",
       });
     }
 
-    // Create article
+    // If Article after AI still empty, reject
+    if (type === "Article" && (!finalContent || !String(finalContent).trim())) {
+      return res.status(422).json({
+        success: false,
+        message: "AI did not return content. Provide content or try again with keyPoints/prompt.",
+      });
+    }
+
+    // Create article (authorId may be undefined for Admin-authored posts)
     const article = await Article.create({
-      authorId: doctor._id,
+      authorId,
       type,
       title,
-      content,
+      content: finalContent,
       tags,
       images
     });

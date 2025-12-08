@@ -123,12 +123,6 @@ const doctorTabs = [
         icon: Stethoscope,
         path: "/doctor/my-appointments",
     },
-    {
-        id: 4,
-        name: "Community Health",
-        icon: File,
-        path: "/doctor/articles",
-    },
 ];
 
 const pharmacyTabs = [
@@ -194,6 +188,12 @@ const adminTabs = [
         name: "Emergencies",
         icon: AlertTriangle,
         path: "/admin/emergencies",
+    },
+    {
+        id: 6,
+        name: "Community Health",
+        icon: File,
+        path: "/admin/articles",
     },
 ];
 
@@ -348,14 +348,7 @@ function App() {
                     path="/video-appointment/:role"
                     element={<VideoAppointment />}
                 />
-                <Route
-                    path="/doctor/articles"
-                    element={
-                        <ProtectedRoute requiredRole="Doctor">
-                            <DoctorArticles tabs={doctorTabs} />
-                        </ProtectedRoute>
-                    }
-                />
+                
 
                 {/* TODO: PHARMACIES */}
                 <Route
@@ -452,6 +445,14 @@ function App() {
                     element={
                         <ProtectedRoute requiredRole="Admin">
                             <Emergencies tabs={adminTabs} />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/admin/articles"
+                    element={
+                        <ProtectedRoute requiredRole="Admin">
+                            <DoctorArticles tabs={adminTabs} />
                         </ProtectedRoute>
                     }
                 />

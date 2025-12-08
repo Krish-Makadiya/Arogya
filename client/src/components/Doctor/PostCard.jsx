@@ -120,6 +120,36 @@ export default function PostCard({
         }
     };
 
+    const isAdminRoute = typeof window !== 'undefined' && (window.location?.pathname || '').startsWith('/admin');
+
+    const stripMarkdown = (text) => {
+        if (!text) return '';
+        return String(text)
+            .replace(/\*\*([^*]+)\*\*/g, '$1') // bold
+            .replace(/\*([^*]+)\*/g, '$1')     // italic
+            .replace(/^#{1,6}\s+/gm, '')        // headings
+            .replace(/^\s*[-*]\s+/gm, '• ')    // bullets to dot
+            .replace(/`{1,3}[^`]*`{1,3}/g, '')   // inline code
+            .replace(/\s+/g, ' ')               // collapse spaces
+            .trim();
+    };
+
+    const handlePublish = async () => {
+        try {
+            const token = await getToken();
+            await axios.put(
+                `${import.meta.env.VITE_SERVER_URL}/api/articles/${post._id}/publish`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            // naive refresh
+            window.location.reload();
+        } catch (e) {
+            console.error('Publish failed', e);
+            alert('Failed to publish the article.');
+        }
+    };
+
     return (
         <div className="bg-light-surface dark:bg-dark-bg rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
             <div className="p-6">
@@ -134,7 +164,7 @@ export default function PostCard({
                             <h4 className="text-sm font-semibold text-light-primary-text dark:text-dark-primary-text truncate">
                                 {post.authorId?.fullName
                                     ? `Dr. ${post.authorId.fullName}`
-                                    : "Dr. Unknown"}
+                                    : "Admin"}
                             </h4>
                         </div>
                         <div className="ml-auto">
@@ -184,12 +214,13 @@ export default function PostCard({
                     </p>
                 )}
 
-                {/* Content excerpt */}
+                {/* Content excerpt (markdown stripped) */}
                 {post.content && (
                     <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 leading-relaxed">
-                        {post.content.length > 220
-                            ? `${post.content.slice(0, 220)}...`
-                            : post.content}
+                        {(() => {
+                            const plain = stripMarkdown(post.content);
+                            return plain.length > 220 ? `${plain.slice(0, 220)}...` : plain;
+                        })()}
                     </p>
                 )}
 

@@ -7,6 +7,26 @@ import { useUser } from "../../context/UserContext";
 import { auth } from "../../config/config";
 
 const ROLES = ["Patient", "Doctor", "Pharmacy", "Admin"];
+const SPECIALTIES = [
+    { label: "General Medicine", value: "general" },
+    { label: "Cardiology", value: "cardiology" },
+    { label: "Dermatology", value: "dermatology" },
+    { label: "ENT", value: "ent" },
+    { label: "Gastroenterology", value: "gastroenterology" },
+    { label: "Neurology", value: "neurology" },
+    { label: "Nephrology", value: "nephrology" },
+    { label: "Oncology", value: "oncology" },
+    { label: "Orthopedics", value: "orthopedics" },
+    { label: "Pediatrics", value: "pediatrics" },
+    { label: "Psychiatry", value: "psychiatry" },
+    { label: "Pulmonology", value: "pulmonology" },
+    { label: "Radiology", value: "radiology" },
+    { label: "Gynecology", value: "gynecology" },
+    { label: "Endocrinology", value: "endocrinology" },
+    { label: "Urology", value: "urology" },
+    { label: "Ophthalmology", value: "ophthalmology" },
+    { label: "Dentistry", value: "dentistry" },
+];
 
 export default function OnboardingForm() {
     const { user, isLoaded } = useUser();
@@ -819,10 +839,9 @@ export default function OnboardingForm() {
                                     Medical Specialty
                                 </label>
                                 <div className="mt-2">
-                                    <input
+                                    <select
                                         id="doctor-specialty"
                                         name="doctor-specialty"
-                                        type="text"
                                         value={doctor.specialty}
                                         onChange={(e) =>
                                             setDoctor({
@@ -830,10 +849,13 @@ export default function OnboardingForm() {
                                                 specialty: e.target.value,
                                             })
                                         }
-                                        className="block w-full rounded-md bg-light-surface/50 dark:bg-dark-surface/50 px-3 py-1.5 text-base text-light-primary-text dark:text-dark-primary-text outline-1 -outline-offset-1 outline-light-secondary-text/20 dark:outline-dark-secondary-text/20 placeholder:text-light-secondary-text dark:placeholder:text-dark-secondary-text focus:outline-2 focus:-outline-offset-2 focus:outline-light-primary dark:focus:outline-dark-primary sm:text-sm/6"
-                                        placeholder="e.g., Cardiology, Neurology, etc."
-                                        required
-                                    />
+                                        className="block w-full rounded-md bg-light-surface/50 dark:bg-dark-surface/50 px-3 py-1.5 text-base text-light-primary-text dark:text-dark-primary-text outline-1 -outline-offset-1 outline-light-secondary-text/20 dark:outline-dark-secondary-text/20 focus:outline-2 focus:-outline-offset-2 focus:outline-light-primary dark:focus:outline-dark-primary sm:text-sm/6"
+                                        required>
+                                        <option value="">Select Specialty</option>
+                                        {SPECIALTIES.map((s) => (
+                                            <option key={s.value} value={s.value}>{s.label}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
 

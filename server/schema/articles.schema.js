@@ -7,7 +7,7 @@ const articleSchema = new mongoose.Schema(
     authorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Doctor",
-      required: true,
+      required: false,
     },
 
     type: {
