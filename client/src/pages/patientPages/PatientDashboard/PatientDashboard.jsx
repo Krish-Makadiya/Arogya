@@ -1,8 +1,8 @@
+import React from "react";
 import { useLocation } from "react-router-dom";
 import Sidebar from "../../../components/Sidebar";
 import PatientDashboardContent from "./PatientDashboardContent";
 import BookWithCallRightNow from "../../../components/patient/BookWithCallRightNow";
-import VoiceNavigator from "../voiceNavigator/VoiceNavigator";
 
 export default function PDashboard({ tabs }) {
     const location = useLocation();
@@ -24,9 +24,6 @@ export default function PDashboard({ tabs }) {
 
             {/* Floating Call Button */}
             <BookWithCallRightNow />
-
-            <PatientDock tabs={tabs} />
-            <VoiceNavigator autoStart={voiceEnabled} />
         </div>
     );
 }
