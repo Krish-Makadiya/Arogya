@@ -549,11 +549,28 @@ router.put("/:id/meeting-link", async (req, res) => {
     }
 });
 
-// PUT /api/appointment/:id/prescription - update prescription list
+// PUT /api/appointment/:id/prescription - update prescription list (doctor-only)
 router.put("/:id/prescription", async (req, res) => {
     try {
         const { id } = req.params;
         const { prescription } = req.body;
+
+        // Auth: only the doctor who owns this appointment can modify prescription
+        const clerkUserId = req.auth?.userId;
+        if (!clerkUserId) {
+            return res.status(401).json({
+                success: false,
+                message: "User not authenticated",
+            });
+        }
+
+        const doctor = await Doctor.findOne({ clerkUserId }).select("_id");
+        if (!doctor) {
+            return res.status(403).json({
+                success: false,
+                message: "Only doctors can update prescriptions",
+            });
+        }
 
         const newId = new mongoose.Types.ObjectId(id);
         if (!Array.isArray(prescription)) {
@@ -563,11 +580,21 @@ router.put("/:id/prescription", async (req, res) => {
             });
         }
 
-        const existingAppointment = await Appointment.findById(newId);
+        const existingAppointment = await Appointment.findById(newId).select(
+            "doctorId"
+        );
         if (!existingAppointment) {
             return res.status(404).json({
                 success: false,
                 message: "Appointment not found",
+            });
+        }
+
+        if (String(existingAppointment.doctorId) !== String(doctor._id)) {
+            return res.status(403).json({
+                success: false,
+                message:
+                    "You are not authorized to update the prescription for this appointment",
             });
         }
 
