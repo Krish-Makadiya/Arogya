@@ -73,42 +73,42 @@ const patientTabs = [
         icon: Pill,
         path: "/patient/symptom-checker",
     },
+    // {
+    //     id: 3,
+    //     name: "SheReads",
+    //     icon: Album,
+    //     path: "/patient/she-reads",
+    // },
     {
         id: 3,
-        name: "SheReads",
-        icon: Album,
-        path: "/patient/she-reads",
-    },
-    {
-        id: 4,
         name: "Menstrual Health",
         icon: Venus,
         path: "/patient/menstrual-health",
     },
     {
-        id: 5,
+        id: 4,
         name: "Get Appointment",
         icon: Stethoscope,
         path: "/patient/get-appointment",
     },
+    // {
+    //     id: 6,
+    //     name: "Search Medicine",
+    //     icon: Search,
+    //     path: "/patient/medicine-search",
+    // },
     {
-        id: 6,
-        name: "Search Medicine",
-        icon: Search,
-        path: "/patient/medicine-search",
-    },
-    {
-        id: 7,
+        id: 5,
         name: "Medical History",
         icon: FileText,
         path: "/patient/medical-history",
     },
-    {
-        id: 8,
-        name: "Community Health",
-        icon: Megaphone,
-        path: "/patient/community",
-    },
+    // {
+    //     id: 8,
+    //     name: "Community Health",
+    //     icon: Megaphone,
+    //     path: "/patient/community",
+    // },
 ];
 
 const doctorTabs = [

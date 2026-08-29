@@ -1,5 +1,5 @@
-// client/src/pages/patientPages/MedicalHistory/PatientMedicalHistory.jsx
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import Sidebar from "../../../components/Sidebar";
@@ -19,10 +19,18 @@ const emptyState = {
 };
 
 const PatientMedicalHistory = ({ tabs }) => {
+  const location = useLocation();
   const { user } = useUser();
   const { getToken } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const getActiveTab = () => {
+    return (
+      tabs?.find((tab) => tab.path === location.pathname)?.name ||
+      tabs?.[0]?.name || ""
+    );
+  };
   const [data, setData] = useState(emptyState);
   const [newFiles, setNewFiles] = useState([]);
   const [error, setError] = useState(null);
@@ -169,7 +177,7 @@ const PatientMedicalHistory = ({ tabs }) => {
 
   return (
     <div className="flex relative">
-      <Sidebar tabs={tabs} />
+      <Sidebar tabs={tabs} getActiveTab={getActiveTab} />
       <div className="min-h-screen w-full bg-light-bg dark:bg-dark-surface md:py-8 md:px-5 py-5">
         <h1 className="text-2xl font-bold mb-4 text-light-primary-text dark:text-dark-primary-text">
           Medical History

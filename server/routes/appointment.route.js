@@ -255,30 +255,70 @@ router.post("/recommend-doctors", async (req, res) => {
             is_new,
         };
 
-        const mlResponse = await axios.post(
-            mlModelUrl,
-            payload,
-            { timeout: 10000 }
-        );
+        let mlData = {};
+        try {
+            const mlResponse = await axios.post(
+                mlModelUrl,
+                payload,
+                { timeout: 7000 }
+            );
+            mlData = mlResponse.data || {};
+        } catch (mlErr) {
+            console.warn("ML model endpoint call failed or unavailable, using symptom-based fallback:", mlErr?.response?.data || mlErr.message);
 
-        const mlData = mlResponse.data || {};
+            // Rule-based symptom fallback if ML API is down or 404
+            let fallbackSpecialist = "general";
+            const symStr = normalizedSymptoms.join(" ");
+            if (/cardio|heart|chest_pain|bp|pulse/i.test(symStr)) {
+                fallbackSpecialist = "cardiology";
+            } else if (/headache|dizziness|brain|neurology|numbness/i.test(symStr)) {
+                fallbackSpecialist = "neurology";
+            } else if (/stomach|nausea|digest|vomit|diarrhea|gastric/i.test(symStr)) {
+                fallbackSpecialist = "gastroenterology";
+            } else if (/bone|joint|back_pain|fracture|ortho/i.test(symStr)) {
+                fallbackSpecialist = "orthopedics";
+            } else if (/skin|rash|acne|itching/i.test(symStr)) {
+                fallbackSpecialist = "dermatology";
+            } else if (/fever|cough|cold|flu|fatigue|sore_throat/i.test(symStr)) {
+                fallbackSpecialist = "general";
+            }
+
+            mlData = {
+                specialist: fallbackSpecialist,
+                disease: "Symptom-based Recommendation",
+                description: "AI model service unavailable. Displaying recommendations based on reported symptoms.",
+                fallback: true,
+            };
+        }
+
         const specialistKey = (mlData.specialist || "general").toLowerCase();
 
         const specialistMap = {
             cardiology: "Cardiology",
             neurology: "Neurology",
             gastroenterology: "Gastroenterology",
-            ent: "other",
             orthopedics: "Orthopedics",
+            dermatology: "Dermatology",
+            ent: "General Practice",
             general: "General Practice",
         };
 
         const mappedSpecialty = specialistMap[specialistKey] || "General Practice";
 
-        const doctors = await Doctor.find({
+        let doctors = await Doctor.find({
             specialty: mappedSpecialty,
             verificationStatus: "verified",
         });
+
+        // Fallback 1: If no verified doctors found for exact specialty, get any verified doctors
+        if (!doctors || doctors.length === 0) {
+            doctors = await Doctor.find({ verificationStatus: "verified" });
+        }
+
+        // Fallback 2: If no verified doctors exist at all in database, get any doctors
+        if (!doctors || doctors.length === 0) {
+            doctors = await Doctor.find({});
+        }
 
         return res.json({
             success: true,

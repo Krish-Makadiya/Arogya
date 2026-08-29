@@ -300,19 +300,7 @@ const GetAppointmentContent = () => {
             (async () => {
                 try {
                     setIsBooking(true);
-                    const prompt = buildDiagnosisPrompt(
-                        userMetadata,
-                        appointmentForm.symptoms
-                    );
-                    const summary = await axios.get(
-                        `${
-                            import.meta.env.VITE_SERVER_URL
-                        }/api/ai/generate-questions`,
-                        {
-                            params: { prompt },
-                        }
-                    );
-                    const aiSummary = summary.data.content;
+                    const aiSummary = appointmentForm.symptoms.length ? `Symptoms: ${appointmentForm.symptoms.join(", ")}` : "";
 
                     const formData = new FormData();
                     formData.append("doctorId", selectedDoctor._id);
@@ -531,122 +519,7 @@ const GetAppointmentContent = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-light-background to-light-background-secondary dark:from-dark-background dark:to-dark-background-secondary">
             <div className="max-w-7xl mx-auto p-6">
-                <div className="mb-6 space-y-4">
-                    <div className="mt-4 rounded-2xl bg-light-surface dark:bg-dark-bg border border-light-secondary-text/20 dark:border-dark-secondary-text/20 p-4 space-y-4">
-                        <div className="flex items-center justify-between gap-2">
-                            <div>
-                                <p className="text-xl font-semibold text-light-primary-text dark:text-dark-primary-text">
-                                    Describe your problem
-                                </p>
-                                <p className="text-md text-light-secondary-text dark:text-dark-secondary-text">
-                                    Enter symptoms and (optionally) vitals so our AI model can suggest the most relevant specialists.
-                                </p>
-                            </div>
-                        </div>
 
-                        <div className="space-y-3">
-                            <div>
-                                <p className="text-lg font-medium text-light-primary-text dark:text-dark-primary-text">
-                                    Symptoms
-                                </p>
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                    {COMMON_SYMPTOMS.map((symptom) => {
-                                        const active = mlSymptoms.includes(symptom);
-                                        return (
-                                            <button
-                                                type="button"
-                                                key={symptom}
-                                                onClick={() =>
-                                                    setMlSymptoms((prev) =>
-                                                        prev.includes(symptom)
-                                                            ? prev.filter((s) => s !== symptom)
-                                                            : [...prev, symptom]
-                                                    )
-                                                }
-                                                className={`px-3 py-1 rounded-full border text-md transition ${
-                                                    active
-                                                        ? "bg-light-primary text-white border-light-primary"
-                                                        : "bg-light-bg dark:bg-dark-surface text-light-primary-text dark:text-dark-primary-text border-light-secondary-text/30 dark:border-dark-secondary-text/30"
-                                                }`}
-                                            >
-                                                {symptom}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                                <div className="mt-3 flex gap-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Add a custom symptom"
-                                        value={mlSymptomInput}
-                                        onChange={(e) => setMlSymptomInput(e.target.value)}
-                                        onKeyDown={handleMlSymptomKeyDown}
-                                        className="flex-1 rounded-lg border border-light-secondary-text/20 dark:border-dark-secondary-text/20 bg-light-background dark:bg-dark-background px-3 py-2 text-md text-light-primary-text dark:text-dark-primary-text focus:outline-none focus:ring-2 focus:ring-light-primary dark:focus:ring-dark-primary"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={addMlSymptom}
-                                        className="px-3 py-2 rounded-lg bg-light-primary dark:bg-dark-primary text-white text-sm font-medium"
-                                    >
-                                        Add
-                                    </button>
-                                </div>
-                                {mlSymptoms.length > 0 && (
-                                    <div className="mt-2 flex flex-wrap gap-2">
-                                        {mlSymptoms.map((symptom) => (
-                                            <span
-                                                key={symptom}
-                                                className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-light-primary/10 dark:bg-dark-primary/10 text-md text-light-primary dark:text-dark-primary"
-                                            >
-                                                {symptom}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeMlSymptom(symptom)}
-                                                    className="ml-1 text-lg"
-                                                >
-                                                    ×
-                                                </button>
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex items-center justify-start gap-3 pt-1">
-                                <button
-                                    type="button"
-                                    onClick={handleGetRecommendations}
-                                    disabled={isRecommending}
-                                    className={`px-4 py-2 rounded-lg text-sm font-semibold text-white bg-light-primary dark:bg-dark-primary hover:bg-light-primary-dark dark:hover:bg-dark-primary-dark transition ${
-                                        isRecommending ? "opacity-70 cursor-not-allowed" : ""
-                                    }`}
-                                >
-                                    {isRecommending ? "Getting recommendations..." : "Get doctor recommendations"}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {mlMeta?.urgency && (
-                    <div className="mb-4 rounded-xl border border-light-secondary-text/30 dark:border-dark-secondary-text/30 bg-light-surface dark:bg-dark-bg px-4 py-3 text-md text-light-primary-text dark:text-dark-primary-text">
-                        {mlMeta.urgency === "A" && (
-                            <span>
-                                Based on your symptoms, we recommend an <span className="font-semibold"> <span className="text-red-500">offline</span>  clinic visit as soon as possible</span>.
-                            </span>
-                        )}
-                        {mlMeta.urgency === "B" && (
-                            <span>
-                                Your case appears <span className="font-semibold">moderate</span>; an online consultation is reasonable, but an offline visit is also appropriate.
-                            </span>
-                        )}
-                        {mlMeta.urgency === "C" && (
-                            <span>
-                                Your case appears <span className="font-semibold">low urgency</span>; an <span className="font-semibold text-green-400">online consultation</span> should be sufficient.
-                            </span>
-                        )}
-                    </div>
-                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {doctors.map((doc) => (

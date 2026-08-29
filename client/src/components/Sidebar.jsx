@@ -1,42 +1,27 @@
-import { UserButton, useUser } from "@clerk/clerk-react";
-import {
-    PanelLeftClose,
-    PanelLeftOpen,
-    ChartColumnIncreasing,
-} from "lucide-react";
-import { useState } from "react";
+import { PanelLeftOpen, PanelLeftClose } from "lucide-react";
+import { UserButton } from "@clerk/clerk-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const Sidebar = ({ tabs }) => {
-    const { user } = useUser();
-    // Initialize isCollapsed from localStorage or default to false
-    const [isCollapsed, setIsCollapsed] = useState(() => {
-        const saved = localStorage.getItem("sidebarCollapsed");
-        return saved ? JSON.parse(saved) : false;
-    });
+export default function Sidebar({
+    isCollapsed,
+    handleCollapse,
+    tabs = [],
+    user,
+    getActiveTab,
+}) {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Update localStorage whenever isCollapsed changes
-    const handleCollapse = () => {
-        const newState = !isCollapsed;
-        setIsCollapsed(newState);
-        localStorage.setItem("sidebarCollapsed", JSON.stringify(newState));
-    };
-
-    const getActiveTab = () => {
-        return (
-            tabs.find((tab) => tab.path === location.pathname)?.name ||
-            tabs[0].name
-        );
-    };
+    const currentActiveTabName = typeof getActiveTab === "function"
+        ? getActiveTab()
+        : tabs?.find((tab) => tab?.path === location.pathname)?.name || tabs?.[0]?.name || "";
 
     return (
         <>
-            {/* Mobile Sidebar Overlay */}
+            {/* ---------------- MOBILE OVERLAY ---------------- */}
             <div
                 className={`
-                    fixed inset-0 z-40 bg-black/30 transition-opacity duration-1000
+                    fixed inset-0 z-40 bg-black/30 transition-opacity duration-500
                     ${
                         isCollapsed
                             ? "pointer-events-none opacity-0"
@@ -47,31 +32,33 @@ const Sidebar = ({ tabs }) => {
                 onClick={handleCollapse}
                 aria-hidden="true"
             />
-            {/* Sidebar */}
+
+            {/* ---------------- SIDEBAR ---------------- */}
             <aside
                 className={`
-                    top-0 left-0 h-screen bg-light-surface dark:bg-dark-bg text-light-primary-text dark:text-dark-primary-text flex flex-col px-3 py-5 transition-all duration-300 ease-in-out z-50
+                    top-0 left-0 h-screen bg-light-surface dark:bg-dark-bg 
+                    text-light-primary-text dark:text-dark-primary-text 
+                    flex flex-col px-3 py-5 transition-all duration-300 ease-in-out z-50
+
                     ${
                         isCollapsed
                             ? "w-0 overflow-hidden md:w-20 md:block hidden md:relative fixed"
                             : "w-full fixed md:w-60 md:sticky md:left-0"
                     }
-                `}
-                style={{ maxWidth: isCollapsed ? "200px" : "100vw" }}>
+                `}>
+                {/* Header */}
                 <div
                     className={`flex px-2 ${
                         isCollapsed ? "justify-center" : "justify-between"
                     } items-center w-full`}>
                     <div
-                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        className={`overflow-hidden transition-all duration-300 ${
                             isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
                         }`}>
                         <img
-                            className="text-2xl font-semibold cursor-pointer whitespace-nowrap"
+                            className="cursor-pointer"
                             onClick={() => navigate("/")}
-                            src={
-                                "https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
-                            }
+                            src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
                             height={36}
                             width={36}
                         />
@@ -88,29 +75,35 @@ const Sidebar = ({ tabs }) => {
                 </div>
 
                 <hr className="mt-3 mb-4 border-light-border dark:border-dark-border opacity-20" />
-                <nav className="flex-0">
+
+                {/* --------------- NAV LINKS ---------------- */}
+                <nav>
                     <ul className="space-y-1">
                         {tabs.map((tab) => (
                             <li
                                 key={tab.id}
-                                className={`cursor-pointer px-4 py-3 text-base rounded-lg transition-all duration-300 ease-in-out ${
-                                    getActiveTab() === tab.name
-                                        ? "bg-light-primary/15 dark:bg-dark-primary/10 text-light-primary dark:text-dark-primary"
-                                        : "hover:bg-light-hover dark:hover:bg-dark-hover"
-                                }`}
                                 onClick={() => {
                                     navigate(tab.path);
                                     if (window.innerWidth < 768)
                                         handleCollapse();
-                                }}>
+                                }}
+                                className={`
+                                    cursor-pointer px-4 py-3 text-base rounded-lg
+                                    transition-all duration-300 ease-in-out
+                                    ${
+                                        currentActiveTabName === tab.name
+                                            ? "bg-light-primary/15 dark:bg-dark-primary/10 text-light-primary dark:text-dark-primary"
+                                            : "hover:bg-light-hover dark:hover:bg-dark-hover"
+                                    }
+                                `}>
                                 <div className="flex items-center">
-                                    <tab.icon className="shrink-0" size={22} />
+                                    <tab.icon size={22} className="shrink-0" />
                                     <span
-                                        className={`ml-2 transition-all text-sm font-semibold duration-300 ease-in-out ${
+                                        className={`ml-2 transition-all text-sm font-semibold ${
                                             isCollapsed
                                                 ? "w-0 opacity-0"
                                                 : "w-auto opacity-100"
-                                        } whitespace-nowrap overflow-hidden`}>
+                                        } overflow-hidden whitespace-nowrap`}>
                                         {tab.name}
                                     </span>
                                 </div>
@@ -121,10 +114,10 @@ const Sidebar = ({ tabs }) => {
 
                 <hr className="mt-3 mb-5 border-light-border dark:border-dark-border opacity-20" />
 
-                <div
-                    className={`flex items-center md:justify-center justify-start px-2 transition-all duration-300 ease-in-out`}>
+                {/* --------------- USER SECTION ---------------- */}
+                <div className="flex items-center md:justify-center justify-start px-2">
                     {!isCollapsed ? (
-                        <div className="flex items-center md:justify-center justify-start gap-2 overflow-hidden">
+                        <div className="flex items-center gap-2">
                             <UserButton
                                 appearance={{
                                     elements: {
@@ -132,33 +125,63 @@ const Sidebar = ({ tabs }) => {
                                     },
                                 }}
                             />
-                            <p className="font-medium md:text-base text-lg whitespace-nowrap transition-all duration-300 ease-in-out">
-                                {user.fullName ||
-                                    user.firstName + user.lastName}
+
+                            <p className="font-medium text-lg whitespace-nowrap">
+                                {user?.fullName ||
+                                    `${user?.firstName || ""} ${
+                                        user?.lastName || ""
+                                    }` ||
+                                    "User"}
                             </p>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-4">
-                            <UserButton
-                                appearance={{
-                                    elements: {
-                                        userButtonAvatarBox: "w-20 h-20",
-                                    },
-                                }}
-                            />
-                        </div>
+                        <UserButton
+                            appearance={{
+                                elements: {
+                                    userButtonAvatarBox: "w-20 h-20",
+                                },
+                            }}
+                        />
                     )}
                 </div>
             </aside>
-            {/* Mobile Sidebar Toggle Button */}
+
+            {/* ---------------- MOBILE TOGGLE BUTTON ---------------- */}
             <button
                 onClick={handleCollapse}
-                className="rounded-lg absolute hover:bg-light-hover dark:hover:bg-dark-hover px-4 py-6 md:opacity-0 opacity-100 md:hidden transition-all duration-300 ease-in-out z-50"
+                className="rounded-lg absolute hover:bg-light-hover dark:hover:bg-dark-hover 
+                        px-4 py-6 md:hidden z-50"
                 style={{ left: 0, top: 0 }}>
                 {isCollapsed && <PanelLeftOpen size={26} />}
             </button>
+
+            {/* ---------------- MOBILE BOTTOM NAV (ICONS ONLY) ---------------- */}
+            <nav
+                className="
+                    fixed bottom-0 left-0 right-0 
+                    bg-light-surface dark:bg-dark-bg 
+                    border-t border-light-border dark:border-dark-border 
+                    md:hidden flex justify-around py-2 z-50
+                ">
+                {tabs.map((tab) => (
+                    <button
+                        key={tab.id}
+                        onClick={() => {
+                            navigate(tab.path);
+                            handleCollapse?.(); // collapse sidebar if open
+                        }}
+                        className={`
+                            flex flex-col items-center p-2 
+                            ${
+                                currentActiveTabName === tab.name
+                                    ? "text-light-primary dark:text-dark-primary"
+                                    : "text-light-primary-text dark:text-dark-primary-text opacity-70"
+                            }
+                        `}>
+                        <tab.icon size={24} />
+                    </button>
+                ))}
+            </nav>
         </>
     );
-};
-
-export default Sidebar;
+}

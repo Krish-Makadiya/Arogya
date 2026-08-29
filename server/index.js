@@ -29,8 +29,6 @@ const ambulanceServiceRoute = require('./routes/ambulanceService.route');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-connectDB();
-
 // Allow configured frontend(s) to talk to this API from any device
 const allowedOrigins = [
     process.env.CLIENT_URL,
@@ -89,8 +87,13 @@ app.get("/", (req, res) => {
     res.send("API is running!");
 });
 
-app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port: ${PORT}`);
-    // startReminderCron();
-    // startPrescriptionCron();
-});
+const startServer = async () => {
+    await connectDB();
+    app.listen(PORT, "0.0.0.0", () => {
+        console.log(`Server running on port: ${PORT}`);
+        // startReminderCron();
+        // startPrescriptionCron();
+    });
+};
+
+startServer();

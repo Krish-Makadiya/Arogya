@@ -235,8 +235,9 @@ export default function OnboardingForm() {
                             "Patient information submitted successfully"
                         );
                     } catch (error) {
-                        toast.error("Error submitting form");
+                        toast.error("Error submitting form: " + (error.response?.data?.message || error.message || "Network error"));
                         console.error(error);
+                        throw error;
                     }
                 } else {
                     console.log("Token:", token);
@@ -249,12 +250,13 @@ export default function OnboardingForm() {
                         });
                         toast.success("Information submitted successfully");
                     } catch (error) {
-                        toast.error("Error submitting form");
+                        toast.error("Error submitting form: " + (error.response?.data?.message || error.message || "Network error"));
                         console.error(error);
+                        throw error;
                     }
                 }
 
-                console.log("Backend response:", response.data);
+                console.log("Backend response:", response?.data);
                 console.log("Backend response Detailed:", response);
             }
 
