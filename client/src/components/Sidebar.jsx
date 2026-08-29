@@ -121,16 +121,7 @@ const Sidebar = ({ tabs }) => {
                                     navigate(tab.path);
                                     if (window.innerWidth < 768)
                                         handleCollapse();
-                                }}
-                                className={`
-                                    cursor-pointer px-4 py-3 text-base rounded-lg
-                                    transition-all duration-300 ease-in-out
-                                    ${
-                                        currentActiveTabName === tab.name
-                                            ? "bg-light-primary/15 dark:bg-dark-primary/10 text-light-primary dark:text-dark-primary"
-                                            : "hover:bg-light-hover dark:hover:bg-dark-hover"
-                                    }
-                                `}>
+                                }}>
                                 <div className="flex items-center">
                                     <tab.icon size={22} className="shrink-0" />
                                     <span
