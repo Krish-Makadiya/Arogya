@@ -197,4 +197,6 @@ const Sidebar = ({ tabs }) => {
             {isPatientRoute && voiceEnabled && <VoiceNavigator autoStart={true} />}
         </>
     );
-}
+};
+
+export default Sidebar;
